@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tic-Tac-Toe AI | Minimax State Space Simulation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="hero">
+    <h1>Tic-Tac-Toe AI</h1>
+    <p>Human vs Intelligent Agent · Minimax & State Space Tree</p>
+  </header>
+
+  <main class="container">
+    <!-- LEFT PANEL -->
+    <section class="info-panel">
+      <h2>Concept Overview</h2>
+
+      <div class="concept">
+        <h3>1. Game State Representation</h3>
+        <p>
+          The game board is represented as a <strong>1D array of 9 cells</strong>.
+          Each cell contains <code>X</code>, <code>O</code>, or <code>null</code>.
+        </p>
+      </div>
+
+      <div class="concept">
+        <h3>2. Terminal States</h3>
+        <ul>
+          <li><strong>Win:</strong> Three same symbols in a row, column, or diagonal</li>
+          <li><strong>Lose:</strong> Opponent wins</li>
+          <li><strong>Draw:</strong> Board full, no winner</li>
+        </ul>
+      </div>
+
+      <div class="concept">
+        <h3>3. Minimax Algorithm</h3>
+        <p>
+          Minimax recursively explores <strong>all possible future game states</strong>
+          and assigns scores:
+        </p>
+        <ul>
+          <li>AI win → <strong>+10</strong></li>
+          <li>Human win → <strong>-10</strong></li>
+          <li>Draw → <strong>0</strong></li>
+        </ul>
+        <p>
+          The AI always selects the move that <strong>maximizes its minimum gain</strong>.
+        </p>
+      </div>
+
+      <div id="status" class="status">
+        Your turn (X)
+      </div>
+
+      <button onclick="resetGame()" class="btn">Reset Game</button>
+    </section>
+
+    <!-- RIGHT PANEL -->
+    <section class="game-panel">
+      <div id="board" class="board"></div>
+    </section>
+  </main>
+
+  <!-- STATE SPACE TREE -->
+  <section class="tree-section">
+    <h2>State Space Tree</h2>
+    <pre id="treeOutput"></pre>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
