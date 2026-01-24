@@ -90,8 +90,8 @@ def draw_jugs(a, b):
     print("-----            -----")
     h = max(A, B)
     for i in range(h, 0, -1):
-        la = "█" if a >= i else " "
-        lb = "█" if b >= i else " "
+        la = "" if a >= i else " "
+        lb = "" if b >= i else " "
         print(f"  {la}                {lb}")
     print("-----            -----")
     print(f" {a}L               {b}L\n")
@@ -126,3 +126,4 @@ for i in range(len(path)):
     time.sleep(1)
 
 print("\nGoal reached successfully\n")
+
