@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Water Jug AI — Beaker Simulation</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<h1>Water Jug Problem — BFS Simulation</h1>
+
+<div class="controls">
+Jug A Capacity: <input id="capA" value="4">
+Jug B Capacity: <input id="capB" value="3">
+Goal (in A): <input id="goal" value="2">
+<button onclick="start()">Start</button>
+</div>
+
+<div class="layout">
+<canvas id="scene" width="700" height="420"></canvas>
+
+<div class="side">
+<h3>Production Rule</h3>
+<p id="ruleBox"></p>
+
+<h3>State Space Tree</h3>
+<pre id="treeBox"></pre>
+</div>
+</div>
+
+<script>
+const canvas = document.getElementById("scene");
+const ctx = canvas.getContext("2d");
+const ruleBox = document.getElementById("ruleBox");
+const treeBox = document.getElementById("treeBox");
+
+let steps=[], caps={}, step=0;
+
+function start(){
+    fetch("/solve", {
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            capA:capA.value,
+            capB:capB.value,
+            goal:goal.value
+        })
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        steps=d.steps;
+        caps=d;
+        treeBox.textContent=d.tree.join("\n");
+        step=0;
+        animate();
+    });
+}
+
+function drawBeaker(x, y, w, h, water, cap, label, type = "beaker") {
+    ctx.save();
+    ctx.translate(x - w/2, y - h/2);
+
+    // ================= NO TAPER: Straight rectangle =================
+    const topInset = 0;
+    const bottomInset = 0;
+
+    /* ================= CONTAINER OUTLINE ================= */
+    ctx.strokeStyle = "#00ffff";
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    ctx.moveTo(topInset, 0);
+    ctx.lineTo(bottomInset, h);
+    ctx.lineTo(w - bottomInset, h);
+    ctx.lineTo(w - topInset, 0);
+    ctx.stroke();
+
+    /* ================= GRADUATION MARKS ================= */
+    ctx.strokeStyle = "#88ffff";
+    ctx.fillStyle = "#88ffff";
+    ctx.font = "12px monospace";
+
+    for (let i = 1; i < cap; i++) {
+        let gy = h - (i / cap) * h;
+        ctx.beginPath();
+        ctx.moveTo(w - 8, gy);
+        ctx.lineTo(w, gy);
+        ctx.stroke();
+        ctx.fillText(i, w + 6, gy + 4);
+    }
+
+    /* ================= WATER (CLIPPED SHAPE) ================= */
+    let waterHeight = (water / cap) * h;
+    let waterTopY = h - waterHeight;
+
+    ctx.fillStyle = "rgba(0,180,255,0.75)";
+    ctx.beginPath();
+    ctx.rect(0, waterTopY, w, waterHeight); // straight rectangle for water
+    ctx.fill();
+
+    // water surface
+    ctx.strokeStyle = "#006688";
+    ctx.beginPath();
+    ctx.moveTo(0, waterTopY);
+    ctx.lineTo(w, waterTopY);
+    ctx.stroke();
+
+    /* ================= LABEL ================= */
+    ctx.fillStyle = "#00ffff";
+    ctx.fillText(`${label} (${water}/${cap})`, 0, h + 22);
+
+    ctx.restore();
+}
+// Set fixed positions and size
+const jugAX = 200, jugAY = 150, jugAW = 80, jugAH = 260;
+const jugBX = 400, jugBY = 150, jugBW = 80, jugBH = 260;
+
+// Initial static draw
+drawBeaker(jugAX, jugAY, jugAW, jugAH, 2, 5, "Jug A");
+drawBeaker(jugBX, jugBY, jugBW, jugBH, 3, 4, "Jug B");
+
+
+function animate() {
+    if (step >= steps.length) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let s = steps[step];
+
+    // Draw BOTH beakers from SAME state
+    drawBeaker(jugAX, jugAY, jugAW, jugAH, s.A, caps.capA, "Jug A");
+    drawBeaker(jugBX, jugBY, jugBW, jugBH, s.B, caps.capB, "Jug B");
+
+    // Sync PR with visual
+    ruleBox.innerText =
+        `Rule ${s.rno}: ${s.rule}\nState (${s.A}, ${s.B})`;
+
+    step++;
+    setTimeout(animate, 2000);
+}
+
+</script>
+
+</body>
+</html>
