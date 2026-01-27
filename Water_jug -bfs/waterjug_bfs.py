@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, send_from_directory ,request, jsonify
 from collections import deque
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=".")
 
 RULES = {
     1: "Fill Jug A",
@@ -45,7 +45,11 @@ def bfs(capA, capB, goal):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return send_from_directory(".", "index.html")
+@app.route("/style.css")
+def style():
+    return send_from_directory(".", "style.css")
+
 
 @app.route("/solve", methods=["POST"])
 def solve():
