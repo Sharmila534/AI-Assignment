@@ -1,69 +1,126 @@
+package EightPuzzleAStar;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
 import java.util.*;
 
-public class EightPuzzleAStar {
-    static int[] goal = {1,2,3,4,5,6,7,8,0};
-    static class State {
-        int[] b; 
-        int g; 
-        State parent;
-        State(int[] b, int g, State p) {
-            this.b = b; this.g = g; parent = p;
-        }
-    }
-    static int h(int[] b) {
-        int d = 0;
-        for(int i=0;i<9;i++){
-            if(b[i]==0) continue;
-            int pos = b[i]-1;
-            d += Math.abs(i/3 - pos/3) + Math.abs(i%3 - pos%3);
-        }
-        return d;
-    }
-    static List<int[]> moves(int[] b){
-        List<int[]> list = new ArrayList<>();
-        int z=0; for(int i=0;i<9;i++) if(b[i]==0) z=i;
-        int r=z/3,c=z%3;
-        int[][] m={{-1,0},{1,0},{0,-1},{0,1}};
-        for(int[] mm:m){
-            int nr=r+mm[0],nc=c+mm[1];
-            if(nr>=0 && nr<3 && nc>=0 && nc<3){
-                int ni=nr*3+nc;
-                int[] nb=b.clone(); nb[z]=nb[ni]; nb[ni]=0;
-                list.add(nb);
-            }
-        }
-        return list;
-    }
-    static void solve(int[] start){
-        PriorityQueue<State> q=new PriorityQueue<>(Comparator.comparingInt(s->s.g+h(s.b)));
-        Set<String> seen=new HashSet<>();
-        State s=new State(start,0,null); q.add(s);
+public class EightPuzzleSimulator extends JFrame {
+    JButton[][] tiles = new JButton[3][3];
+    JTextArea log = new JTextArea();
+    JLabel info = new JLabel("Status: Ready", JLabel.CENTER);
+    List<PuzzleNode> sol;
+    int step = 0;
 
-        while(!q.isEmpty()){
-            State cur=q.poll();
-            if(Arrays.equals(cur.b,goal)){
-                printPath(cur); return;
+    public EightPuzzleSimulator() {
+        setTitle("8-Puzzle A*");
+        setSize(1000,650);
+        setLayout(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        JPanel grid = new JPanel(new GridLayout(3,3,5,5));
+        grid.setBounds(20,20,400,400);
+
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++){
+                tiles[i][j]=new JButton();
+                tiles[i][j].setFont(new Font("Arial",Font.BOLD,40));
+                grid.add(tiles[i][j]);
             }
-            seen.add(Arrays.toString(cur.b));
-            for(int[] n:moves(cur.b)){
-                if(!seen.contains(Arrays.toString(n))){
-                    q.add(new State(n,cur.g+1,cur));
+
+        add(grid);
+
+        info.setBounds(20,430,400,30);
+        add(info);
+
+        log.setEditable(false);
+        log.setFont(new Font("Consolas",0,12));
+        JScrollPane sp = new JScrollPane(log);
+        sp.setBounds(450,20,500,440);
+        add(sp);
+
+        solve();
+        animate();
+        setVisible(true);
+    }
+
+    int[][] input(String title){
+        while(true){
+            String s = JOptionPane.showInputDialog(
+                    this,"Enter 9 numbers (0 to 8) space-separated",title,1);
+            if(s==null) System.exit(0);
+
+            String[] a = s.trim().split("\\s+");
+            if(a.length!=9) continue;
+
+            int[][] m = new int[3][3];
+            boolean[] seen = new boolean[9];
+
+            try{
+                for(int i=0;i<9;i++){
+                    int n = Integer.parseInt(a[i]);
+                    if(n<0||n>8||seen[n]) throw new Exception();
+                    seen[n]=true;
+                    m[i/3][i%3]=n;
                 }
+                return m;
+            }catch(Exception e){
+                JOptionPane.showMessageDialog(this,"Invalid Input!");
             }
         }
     }
-    static void printPath(State s){
-        List<State> path=new ArrayList<>();
-        while(s!=null){ path.add(s); s=s.parent; }
-        Collections.reverse(path);
-        System.out.println("\nsolution steps:\n");
-        for(State st:path){
-            System.out.println(Arrays.toString(st.b)+" g="+st.g+" h="+h(st.b)+" f="+(st.g+h(st.b)));
+
+    void solve(){
+        int[][] start = input("Start State");
+        PuzzleNode.GOAL = input("Goal State");
+
+        PriorityQueue<PuzzleNode> open =
+                new PriorityQueue<>(Comparator.comparingInt(n->n.f));
+        HashSet<PuzzleNode> closed = new HashSet<>();
+
+        open.add(new PuzzleNode(start,0,null,"Initial"));
+
+        while(!open.isEmpty()){
+            PuzzleNode cur = open.poll();
+
+            log.append("\nEXPAND: "+cur.move+
+                       " g="+cur.g+" h="+cur.h+" f="+cur.f+"\n");
+
+            if(cur.isGoal()){
+                sol = new ArrayList<>();
+                while(cur!=null){
+                    sol.add(cur);
+                    cur = cur.parent;
+                }
+                Collections.reverse(sol);
+                return;
+            }
+
+            closed.add(cur);
+            for(PuzzleNode c : cur.expand())
+                if(!closed.contains(c)) open.add(c);
         }
-        tree.print(path);
+
+        JOptionPane.showMessageDialog(this,"No Solution Found!");
     }
+
+    void animate(){
+        if(sol==null || step>=sol.size()) return;
+
+        PuzzleNode n = sol.get(step++);
+        for(int i=0;i<3;i++)
+            for(int j=0;j<3;j++){
+                tiles[i][j].setText(""+n.state[i][j]);
+                tiles[i][j].setBackground(
+                        n.state[i][j]==0 ? Color.LIGHT_GRAY : Color.WHITE);
+            }
+
+        info.setText("Step: "+(step-1)+" | g="+n.g+" | h="+n.h+" | f="+n.f);
+
+        new javax.swing.Timer(1500,e->animate()).start();
+    }
+
     public static void main(String[] args){
-        int[] start={1,2,3,4,0,6,7,5,8};
-        solve(start);
+        SwingUtilities.invokeLater(EightPuzzleSimulator::new);
     }
 }
